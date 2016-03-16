@@ -1,0 +1,22 @@
+build_dir: "/tmp/postgres-ci/builds/"
+scripts: "/opt/postgres-ci/worker/scripts"
+
+logger:
+  level: "info" # info/warning/error
+  #logfile: "/var/log/postgres-ci/worker.log"
+
+connect:
+  host: "/var/run/postgresql"
+  port: 5432
+  username: "postgresci"
+  password: "iAmAdiscoDancer"
+  database: "postgresci"
+
+docker:
+  entrypoint: "unix:///var/run/docker.sock"
+  tls_cert_path:
+  auth:
+    username:
+    password:
+    email:
+    server_address:
