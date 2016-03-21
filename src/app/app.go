@@ -4,6 +4,7 @@ import (
 	logger "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 	"github.com/postgres-ci/worker/src/config"
+	"github.com/postgres-ci/worker/src/docker"
 
 	"os"
 	"os/signal"
@@ -28,6 +29,13 @@ func New(config config.Config) app {
 		logger.Fatalf("Could not connect to database server '%v'", err)
 	}
 
+	dockerClient, err := docker.Bind(config.Docker)
+
+	if err != nil {
+
+		logger.Fatalf("Could not bind to docker daemon '%v'", err)
+	}
+
 	connect.SetMaxOpenConns(MaxOpenConns)
 	connect.SetMaxIdleConns(MaxIdleConns)
 	connect.SetConnMaxLifetime(ConnMaxLifetime)
@@ -35,12 +43,14 @@ func New(config config.Config) app {
 	return app{
 		config:  config,
 		connect: connect,
+		docker:  dockerClient,
 	}
 }
 
 type app struct {
 	config  config.Config
 	connect *sqlx.DB
+	docker  docker.Client
 	debug   bool
 }
 

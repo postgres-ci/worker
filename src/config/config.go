@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	logger "github.com/Sirupsen/logrus"
+	"github.com/postgres-ci/worker/src/docker"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -27,11 +28,11 @@ func Open(path string) (Config, error) {
 }
 
 type Config struct {
-	BuildDir string  `yaml:"build_dir"`
-	Scripts  string  `yaml:"scripts"`
-	Logger   Logger  `yaml:"logger"`
-	Connect  Connect `yaml:"connect"`
-	Docker   Docker  `yaml:"docker"`
+	BuildDir string        `yaml:"build_dir"`
+	Scripts  string        `yaml:"scripts"`
+	Logger   Logger        `yaml:"logger"`
+	Connect  Connect       `yaml:"connect"`
+	Docker   docker.Config `yaml:"docker"`
 }
 
 type Connect struct {
@@ -68,17 +69,4 @@ func (l *Logger) LogLevel() logger.Level {
 	}
 
 	return logger.ErrorLevel
-}
-
-type Docker struct {
-	Endpoint    string             `yaml:"endpoint"`
-	TlsCertPath string             `yaml:"tls_cert_path"`
-	Auth        dockerRegistryAuth `yaml:"auth"`
-}
-
-type dockerRegistryAuth struct {
-	Username      string `yaml:"username"`
-	Password      string `yaml:"password"`
-	Email         string `yaml:"email"`
-	ServerAddress string `yaml:"server_address"`
 }

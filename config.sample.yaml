@@ -8,12 +8,12 @@ logger:
 connect:
   host: "/var/run/postgresql"
   port: 5432
-  username: "postgresci"
+  username: "postgres_ci"
   password: "iAmAdiscoDancer"
-  database: "postgresci"
+  database: "postgres_ci"
 
 docker:
-  entrypoint: "unix:///var/run/docker.sock"
+  endpoint: "unix:///var/run/docker.sock"
   tls_cert_path:
   auth:
     username:
