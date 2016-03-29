@@ -1,9 +1,11 @@
 package app
 
 import (
-	logger "github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
-	"github.com/postgres-ci/worker/src/config"
+	_ "github.com/lib/pq"
+	"github.com/postgres-ci/worker/src/app/cmd"
+	"github.com/postgres-ci/worker/src/common"
 	"github.com/postgres-ci/worker/src/docker"
 
 	"os"
@@ -18,40 +20,57 @@ const (
 	ConnMaxLifetime = time.Minute
 )
 
-func New(config config.Config) app {
+type command interface {
+	Run(*common.Build) error
+}
 
-	logger.Debugf("Connect to postgresql server. DSN(%s)", config.Connect.DSN())
+func New(config common.Config) *app {
+
+	log.Debugf("Connect to postgresql server. DSN(%s)", config.Connect.DSN())
 
 	connect, err := sqlx.Connect("postgres", config.Connect.DSN())
 
 	if err != nil {
 
-		logger.Fatalf("Could not connect to database server '%v'", err)
+		log.Fatalf("Could not connect to database server '%v'", err)
 	}
 
 	dockerClient, err := docker.Bind(config.Docker)
 
 	if err != nil {
 
-		logger.Fatalf("Could not bind to docker daemon '%v'", err)
+		log.Fatalf("Could not bind to docker daemon '%v'", err)
 	}
 
 	connect.SetMaxOpenConns(MaxOpenConns)
 	connect.SetMaxIdleConns(MaxIdleConns)
 	connect.SetConnMaxLifetime(ConnMaxLifetime)
 
-	return app{
+	app := app{
 		config:  config,
 		connect: connect,
 		docker:  dockerClient,
+		tasks:   make(chan Task),
+		commands: []command{
+			&cmd.Checkout{
+				WorkingDir: config.WorkingDir,
+			},
+			&cmd.Clear{},
+		},
 	}
+
+	go app.execute()
+
+	return &app
 }
 
 type app struct {
-	config  config.Config
-	connect *sqlx.DB
-	docker  docker.Client
-	debug   bool
+	config   common.Config
+	connect  *sqlx.DB
+	docker   docker.Client
+	tasks    chan Task
+	commands []command
+	debug    bool
 }
 
 func (a *app) SetDebugMode() {
@@ -61,8 +80,8 @@ func (a *app) SetDebugMode() {
 
 func (a *app) Run() {
 
-	logger.Info("Postgres-CI worker started")
-	logger.Debugf("Pid: %d", os.Getpid())
+	log.Info("Postgres-CI worker started")
+	log.Debugf("Pid: %d", os.Getpid())
 
 	if a.debug {
 
@@ -89,10 +108,15 @@ func (a *app) handleOsSignals() {
 	for {
 
 		switch sig := <-signalChan; sig {
+
 		case syscall.SIGUSR1:
-			logger.Info("Signal 'USR1'. Logrotate (postrotate)")
+
+			log.Info("Signal 'USR1'. Logrotate (postrotate)")
+
 		default:
-			logger.Infof("Postgres-CI worker stopped (signal: %v)", sig)
+
+			log.Infof("Postgres-CI worker stopped (signal: %v)", sig)
+
 			os.Exit(0)
 		}
 	}

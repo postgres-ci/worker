@@ -19,6 +19,7 @@ func Bind(c Config) (*client, error) {
 				Email:         c.Auth.Email,
 				ServerAddress: c.Auth.ServerAddress,
 			},
+			binds: c.Binds,
 		}
 		err error
 	)
@@ -46,7 +47,8 @@ func Bind(c Config) (*client, error) {
 
 type client struct {
 	*docker.Client
-	auth docker.AuthConfiguration
+	binds []string
+	auth  docker.AuthConfiguration
 }
 
 func (c *client) CreateConteiner(image string, options CreateContainerOptions) (*Container, error) {
@@ -64,7 +66,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 		},
 		HostConfig: &docker.HostConfig{
 			Privileged:    false,
-			Binds:         options.Binds,
+			Binds:         append(c.binds, options.Binds...),
 			RestartPolicy: docker.NeverRestart(),
 		},
 	})

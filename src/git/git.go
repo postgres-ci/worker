@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 func CheckoutToRevision(repository, workingDir, branch, revision string) (string, error) {
 
-	path := filepath.Join(workingDir, branch, revision)
+	path := filepath.Join(workingDir, branch, revision, fmt.Sprint(time.Now().UnixNano()))
 	{
 
 		cmd := exec.Command("git", "clone", "-q", "--single-branch", "--branch", branch, repository, path)

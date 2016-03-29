@@ -1,8 +1,9 @@
 package docker
 
 type Config struct {
-	Endpoint    string `yaml:"endpoint"`
-	TlsCertPath string `yaml:"tls_cert_path"`
+	Endpoint    string   `yaml:"endpoint"`
+	Binds       []string `yaml:"binds"`
+	TlsCertPath string   `yaml:"tls_cert_path"`
 	Auth        struct {
 		Username      string `yaml:"username"`
 		Password      string `yaml:"password"`

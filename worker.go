@@ -2,9 +2,8 @@ package main
 
 import (
 	logger "github.com/Sirupsen/logrus"
-	_ "github.com/lib/pq"
 	"github.com/postgres-ci/worker/src/app"
-	"github.com/postgres-ci/worker/src/config"
+	"github.com/postgres-ci/worker/src/common"
 
 	"flag"
 	"fmt"
@@ -38,6 +37,11 @@ func main() {
 
 	flag.Parse()
 
+	logger.SetFormatter(&logger.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05 MST",
+	})
+
 	if _, err := os.Open(pathToConfig); err != nil {
 
 		if os.IsNotExist(err) {
@@ -48,7 +52,7 @@ func main() {
 		logger.Fatalf("Could not open configuration file '%s'. %v", pathToConfig, err)
 	}
 
-	config, err := config.Open(pathToConfig)
+	config, err := common.ReadConfig(pathToConfig)
 
 	if err != nil {
 

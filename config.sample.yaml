@@ -1,9 +1,13 @@
-build_dir: "/tmp/postgres-ci/builds/"
-scripts: "/opt/postgres-ci/worker/scripts"
+working_dir: "/tmp/postgres-ci/builds/"
+assets: "/opt/postgres-ci/worker/assets"
+
+debug:
+  host: 10.211.55.6
+  port: 8080
 
 logger:
   level: "info" # info/warning/error
-  #logfile: "/var/log/postgres-ci/worker.log"
+  logfile: "/var/log/postgres-ci/worker.log"
 
 connect:
   host: "/var/run/postgresql"

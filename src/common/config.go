@@ -1,4 +1,4 @@
-package config
+package common
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 )
 
-func Open(path string) (Config, error) {
+func ReadConfig(path string) (Config, error) {
 
 	var config Config
 
@@ -28,11 +28,20 @@ func Open(path string) (Config, error) {
 }
 
 type Config struct {
-	BuildDir string        `yaml:"build_dir"`
-	Scripts  string        `yaml:"scripts"`
-	Logger   Logger        `yaml:"logger"`
-	Connect  Connect       `yaml:"connect"`
-	Docker   docker.Config `yaml:"docker"`
+	WorkingDir string        `yaml:"working_dir"`
+	Assets     string        `yaml:"assets"`
+	Logger     Logger        `yaml:"logger"`
+	Connect    Connect       `yaml:"connect"`
+	Docker     docker.Config `yaml:"docker"`
+	Debug      struct {
+		Host string `host`
+		Port uint16 `port`
+	} `yaml:"debug"`
+}
+
+func (c *Config) DebugAddr() string {
+
+	return fmt.Sprintf("%s:%d", c.Debug.Host, c.Debug.Port)
 }
 
 type Connect struct {
@@ -56,7 +65,8 @@ func (c *Connect) DSN() string {
 }
 
 type Logger struct {
-	Level string `yaml:"level"`
+	Level   string `yaml:"level"`
+	Logfile string `yaml:"logfile"`
 }
 
 func (l *Logger) LogLevel() logger.Level {
