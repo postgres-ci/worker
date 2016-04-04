@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	logger "github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/postgres-ci/worker/src/common"
 	"github.com/postgres-ci/worker/src/git"
 )
@@ -16,15 +16,20 @@ func (c *Checkout) Run(build *common.Build) error {
 
 	if err != nil {
 
-		(&Clear{}).Run(build)
-
 		return err
 	}
 
-	logger.Debugf("Checkout %s into %s", build.RepositoryURL, path)
-	logger.Debugf("Branch: %s, revision: %s", build.Branch, build.Revision)
+	log.Debugf("Checkout '%s' into '%s'", build.RepositoryURL, path)
+	log.Debugf("Branch: %s, revision: %s", build.Branch, build.Revision)
 
 	build.WorkingDir = path
+
+	if err := build.LoadConfig(); err != nil {
+
+		log.Errorf("Could not load build config: %v", err)
+
+		return err
+	}
 
 	return nil
 }

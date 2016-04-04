@@ -52,7 +52,7 @@ func (a *app) listen() {
 
 			if err := json.Unmarshal([]byte(event.Extra), &task); err != nil {
 
-				log.Errorf("Could not unmarshal notify playload (err: %v)", err)
+				log.Errorf("Could not unmarshal notify playload: %v", err)
 
 				continue
 			}
@@ -71,7 +71,7 @@ func (a *app) listen() {
 
 					if e, ok := err.(*pq.Error); !ok || e.Message != "NO_NEW_TASKS" {
 
-						log.Errorf("Could not fetch new task (err: %v)", err)
+						log.Errorf("Could not fetch new task: %v", err)
 					}
 
 					break

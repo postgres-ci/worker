@@ -5,6 +5,7 @@ import (
 
 	"bytes"
 	"fmt"
+	"strings"
 )
 
 type CreateContainerOptions struct {
@@ -20,13 +21,13 @@ type Container struct {
 	Output      bytes.Buffer
 }
 
-func (c *Container) RunScript(script string) error {
+func (c *Container) RunCmd(cmd string) error {
 
 	exec, err := c.client.CreateExec(docker.CreateExecOptions{
 		Container:    c.containerID,
 		AttachStderr: true,
 		AttachStdout: true,
-		Cmd:          []string{"bash", script},
+		Cmd:          strings.Fields(cmd),
 	})
 
 	if err != nil {
@@ -51,7 +52,7 @@ func (c *Container) RunScript(script string) error {
 
 	if inspect.ExitCode != 0 {
 
-		return fmt.Errorf("Execute '%s' failed", script)
+		return fmt.Errorf("Execute cmd '%s' failed", cmd)
 	}
 
 	return nil

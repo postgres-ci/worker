@@ -32,14 +32,14 @@ func New(config common.Config) *app {
 
 	if err != nil {
 
-		log.Fatalf("Could not connect to database server '%v'", err)
+		log.Fatalf("Could not connect to database server: %v", err)
 	}
 
 	dockerClient, err := docker.Bind(config.Docker)
 
 	if err != nil {
 
-		log.Fatalf("Could not bind to docker daemon '%v'", err)
+		log.Fatalf("Could not bind to docker daemon: %v", err)
 	}
 
 	connect.SetMaxOpenConns(MaxOpenConns)
@@ -49,17 +49,21 @@ func New(config common.Config) *app {
 	app := app{
 		config:  config,
 		connect: connect,
-		docker:  dockerClient,
-		tasks:   make(chan Task),
 		commands: []command{
 			&cmd.Checkout{
 				WorkingDir: config.WorkingDir,
 			},
+			cmd.Build(
+				config.Assets,
+				dockerClient,
+				connect,
+			),
 			&cmd.Clear{},
 		},
+		tasks: make(chan Task),
 	}
 
-	go app.execute()
+	go app.runner()
 
 	return &app
 }
@@ -67,9 +71,8 @@ func New(config common.Config) *app {
 type app struct {
 	config   common.Config
 	connect  *sqlx.DB
-	docker   docker.Client
-	tasks    chan Task
 	commands []command
+	tasks    chan Task
 	debug    bool
 }
 

@@ -1,16 +1,28 @@
 package common
 
 import (
-	"fmt"
-	logger "github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/postgres-ci/worker/src/docker"
 	"gopkg.in/yaml.v2"
+
+	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 func ReadConfig(path string) (Config, error) {
 
 	var config Config
+
+	if _, err := os.Open(path); err != nil {
+
+		if os.IsNotExist(err) {
+
+			return config, fmt.Errorf("No such configuration file '%s'", path)
+		}
+
+		return config, fmt.Errorf("Could not open configuration file '%s': %v", path, err)
+	}
 
 	data, err := ioutil.ReadFile(path)
 
@@ -69,14 +81,14 @@ type Logger struct {
 	Logfile string `yaml:"logfile"`
 }
 
-func (l *Logger) LogLevel() logger.Level {
+func (l *Logger) LogLevel() log.Level {
 
 	switch l.Level {
 	case "info":
-		return logger.InfoLevel
+		return log.InfoLevel
 	case "warning":
-		return logger.WarnLevel
+		return log.WarnLevel
 	}
 
-	return logger.ErrorLevel
+	return log.ErrorLevel
 }

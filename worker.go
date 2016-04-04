@@ -42,21 +42,11 @@ func main() {
 		TimestampFormat: "2006-01-02 15:04:05 MST",
 	})
 
-	if _, err := os.Open(pathToConfig); err != nil {
-
-		if os.IsNotExist(err) {
-
-			logger.Fatalf("No such configuration file '%s'", pathToConfig)
-		}
-
-		logger.Fatalf("Could not open configuration file '%s'. %v", pathToConfig, err)
-	}
-
 	config, err := common.ReadConfig(pathToConfig)
 
 	if err != nil {
 
-		logger.Fatalf("Error reading configuration file '%v'", err)
+		logger.Fatalf("Error reading configuration file: %v", err)
 	}
 
 	if debug {
