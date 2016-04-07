@@ -83,11 +83,49 @@ func (b *build) subbuild(image string, build *common.Build) error {
 
 	for _, command := range append([]string{"bash /opt/postgres-ci/assets/setup.sh"}, build.Config.Commands...) {
 
+		log.Debugf("Run cmd: %s", command)
+
 		if err := container.RunCmd(command); err != nil {
 
 			log.Errorf("Execute failed. Cmd: %s, output: %s", command, container.Output.String())
 
 			return err
+		}
+	}
+
+	connect, err := sqlx.Connect("postgres", build.DSN(container.IPAddress))
+
+	if err != nil {
+
+		log.Errorf("Could not run PostgreSQL server: %v", err)
+
+		return err
+	}
+
+	var tests []test
+
+	if err := connect.Select(&tests, `
+		SELECT 
+			namespace,
+			procedure,
+			to_json(errors) AS errors,
+			started_at,
+			finished_at
+		FROM assert.test_runner()`); err != nil {
+
+		log.Errorf("Could not run tests: %v", err)
+
+		return err
+	}
+
+	for _, test := range tests {
+
+		if len(test.Errors) != 0 {
+
+			log.Debugf("--- FAIL: %s.%s (%.4fs)\n\t%v", test.Namespace, test.Procedure, test.Errors, test.FinishedAt.Sub(test.StartedAt).Seconds())
+		} else {
+
+			log.Debugf("--- PASS: %s.%s (%.4fs)", test.Namespace, test.Procedure, test.FinishedAt.Sub(test.StartedAt).Seconds())
 		}
 	}
 

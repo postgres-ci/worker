@@ -2,7 +2,6 @@ package app
 
 import (
 	log "github.com/Sirupsen/logrus"
-	_ "github.com/mkevac/debugcharts"
 	_ "net/http/pprof"
 
 	"net/http"
@@ -16,7 +15,6 @@ func (a *app) debugInfo() {
 
 		log.Info("Worker running in debug mode")
 		log.Infof("pprof: http://%s/debug/pprof", a.config.DebugAddr())
-		log.Infof("Debug charts: http://%s/debug/charts", a.config.DebugAddr())
 		log.Error(http.ListenAndServe(a.config.DebugAddr(), nil))
 	}()
 

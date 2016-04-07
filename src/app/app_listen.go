@@ -23,12 +23,17 @@ func (a *app) listen() {
 
 	listener := pq.NewListener(a.config.Connect.DSN(), minReconnectInterval, maxReconnectInterval, func(event pq.ListenerEventType, err error) {
 
-		log.Debugf("Postgres notify send event [%v], err '%v'", event, err)
+		if err != nil {
+
+			log.Errorf("Postgres listen: %v", err)
+
+			return
+		}
+
+		log.Debugf("Postgres notify send event: %v", event)
 	})
 
 	listener.Listen(channel)
-
-	log.Infof("LISTEN '%s' channel", channel)
 
 	var (
 		check  = time.Tick(time.Minute / 10)

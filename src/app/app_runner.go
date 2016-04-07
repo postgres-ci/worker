@@ -41,7 +41,5 @@ func (a *app) runner() {
 				break
 			}
 		}
-
-		log.Debug(build)
 	}
 }

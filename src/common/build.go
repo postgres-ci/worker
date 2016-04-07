@@ -3,6 +3,7 @@ package common
 import (
 	"gopkg.in/yaml.v2"
 
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 )
@@ -22,6 +23,15 @@ type Build struct {
 			Password string `yaml:"password"`
 		} `postgres`
 	}
+}
+
+func (b *Build) DSN(host string) string {
+
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host,
+		b.Config.Postgres.Username,
+		b.Config.Postgres.Password,
+		b.Config.Postgres.Database,
+	)
 }
 
 func (b *Build) LoadConfig() error {

@@ -4,38 +4,13 @@
 		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
-			"revision": "a26f43589d737684363ff856c5a0f9f24b946510",
+			"revision": "4b6ea7319e214d98c938f12692336f7ca9348d6b",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/fsouza/go-dockerclient",
 			"repository": "https://github.com/fsouza/go-dockerclient",
-			"revision": "cec3f19b1d800de38185ec0e08446156254ec463",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/gin-gonic/gin",
-			"repository": "https://github.com/gin-gonic/gin",
-			"revision": "4a6bc4aac4607e253bcda67c8c5bcda693d2388e",
-			"branch": "develop"
-		},
-		{
-			"importpath": "github.com/golang/protobuf/proto",
-			"repository": "https://github.com/golang/protobuf",
-			"revision": "8d92cf5fc15a4382f8964b08e1f42a75c0591aa3",
-			"branch": "master",
-			"path": "/proto"
-		},
-		{
-			"importpath": "github.com/gorilla/handlers",
-			"repository": "https://github.com/gorilla/handlers",
-			"revision": "d0f261246491e3a8613039e90764460448dc05f5",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/gorilla/websocket",
-			"repository": "https://github.com/gorilla/websocket",
-			"revision": "e2e3d8414d0fbae04004f151979f4e27c6747fe7",
+			"revision": "bf97c77db7c945cbcdbf09d56c6f87a66f54537b",
 			"branch": "master"
 		},
 		{
@@ -47,86 +22,19 @@
 		{
 			"importpath": "github.com/lib/pq",
 			"repository": "https://github.com/lib/pq",
-			"revision": "165a3529e799da61ab10faed1fabff3662d6193f",
+			"revision": "3cd0097429be7d611bb644ef85b42bfb102ceea4",
 			"branch": "master"
-		},
-		{
-			"importpath": "github.com/manucorporat/sse",
-			"repository": "https://github.com/manucorporat/sse",
-			"revision": "ee05b128a739a0fb76c7ebd3ae4810c1de808d6d",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/mkevac/debugcharts",
-			"repository": "https://github.com/mkevac/debugcharts",
-			"revision": "4e0f0921a868b01d83ba3b630a70b00522a5d2dd",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/cpu",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/cpu"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/host",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/host"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/internal/common",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/internal/common"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/mem",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/mem"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/net",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/net"
-		},
-		{
-			"importpath": "github.com/shirou/gopsutil/process",
-			"repository": "https://github.com/shirou/gopsutil",
-			"revision": "be06a94d4487f6562f3c8dbfa6e51689406e0c61",
-			"branch": "master",
-			"path": "/process"
-		},
-		{
-			"importpath": "golang.org/x/net/context",
-			"repository": "https://go.googlesource.com/net",
-			"revision": "31df19d69da8728e9220def59b80ee577c3e48bf",
-			"branch": "master",
-			"path": "/context"
 		},
 		{
 			"importpath": "gopkg.in/airbrake/gobrake.v2",
 			"repository": "https://gopkg.in/airbrake/gobrake.v2",
-			"revision": "c9d51adc624b5cc4c1bf8de730a09af4878ffe2d",
+			"revision": "31c8ff1fb8b79a6947e6565e9a6df535f98a6b94",
 			"branch": "master"
 		},
 		{
 			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
 			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
 			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
-			"branch": "master"
-		},
-		{
-			"importpath": "gopkg.in/go-playground/validator.v8",
-			"repository": "https://gopkg.in/go-playground/validator.v8",
-			"revision": "014792cf3e266caff1e916876be12282b33059e0",
 			"branch": "master"
 		},
 		{
