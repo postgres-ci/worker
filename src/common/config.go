@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
+	"strconv"
 )
 
 func ReadConfig(path string) (Config, error) {
@@ -40,11 +42,12 @@ func ReadConfig(path string) (Config, error) {
 }
 
 type Config struct {
-	WorkingDir string        `yaml:"working_dir"`
 	Assets     string        `yaml:"assets"`
-	Logger     Logger        `yaml:"logger"`
 	Connect    Connect       `yaml:"connect"`
 	Docker     docker.Config `yaml:"docker"`
+	Logger     Logger        `yaml:"logger"`
+	NumWorkers string        `yaml:"num_workers"`
+	WorkingDir string        `yaml:"working_dir"`
 	Debug      struct {
 		Host string `host`
 		Port uint16 `port`
@@ -54,6 +57,27 @@ type Config struct {
 func (c *Config) DebugAddr() string {
 
 	return fmt.Sprintf("%s:%d", c.Debug.Host, c.Debug.Port)
+}
+
+func (c *Config) GetNumWorkers() int {
+
+	switch c.NumWorkers {
+	case "auto":
+
+		if cpus := runtime.NumCPU(); cpus > 2 {
+
+			return int(float32(cpus) * 0.7)
+		}
+
+	default:
+
+		if num, err := strconv.ParseInt(c.NumWorkers, 10, 0); err == nil {
+
+			return int(num)
+		}
+	}
+
+	return 1
 }
 
 type Connect struct {

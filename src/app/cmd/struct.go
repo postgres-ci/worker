@@ -19,6 +19,13 @@ type err struct {
 	Comment string `json:"comment"`
 }
 
+type tests []test
+
+func (t tests) Value() (driver.Value, error) {
+
+	return json.Marshal(t)
+}
+
 type errors []err
 
 func (e *errors) Scan(src interface{}) error {
@@ -37,9 +44,4 @@ func (e *errors) Scan(src interface{}) error {
 	}
 
 	return json.Unmarshal(source, &e)
-}
-
-func (e *errors) Value() (driver.Value, error) {
-
-	return json.Marshal(e)
 }

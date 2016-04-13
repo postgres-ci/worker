@@ -15,7 +15,7 @@ const (
 )
 
 type Task struct {
-	BuildID   int64     `json:"build_id"   db:"build_id"`
+	TaskID    int32     `json:"task_id"    db:"task_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
@@ -36,7 +36,7 @@ func (a *app) listen() {
 	listener.Listen(channel)
 
 	var (
-		check  = time.Tick(time.Minute / 10)
+		check  = time.Tick(time.Minute)
 		events = listener.NotificationChannel()
 	)
 
@@ -62,7 +62,14 @@ func (a *app) listen() {
 				continue
 			}
 
-			a.tasks <- task
+			if _, err := a.connect.Exec("SELECT tasks.accept($1)", task.TaskID); err == nil {
+
+				a.tasks <- task
+
+			} else {
+
+				log.Debugf("Error when accepting a task: %v", err)
+			}
 
 		case <-check:
 
@@ -72,7 +79,7 @@ func (a *app) listen() {
 
 				var task Task
 
-				if err := a.connect.Get(&task, "SELECT build_id, created_at FROM postgres_ci.get_new_task()"); err != nil {
+				if err := a.connect.Get(&task, "SELECT task_id, created_at FROM tasks.get()"); err != nil {
 
 					if e, ok := err.(*pq.Error); !ok || e.Message != "NO_NEW_TASKS" {
 

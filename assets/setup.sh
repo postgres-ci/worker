@@ -20,4 +20,4 @@ if [ "$TEST_DATABASE" != "$POSTGRES_DB" ]; then
     echo "Create test database: $TEST_DATABASE"
 fi
 
-env PGPASSWORD=$TEST_PASSWORD psql -U $TEST_USERNAME -d $TEST_DATABASE -f /opt/postgres-ci/assets/assert.sql
+env PGPASSWORD=$TEST_PASSWORD psql ON_ERROR_STOP=1 -U $TEST_USERNAME -d $TEST_DATABASE -f /opt/postgres-ci/assets/assert.sql

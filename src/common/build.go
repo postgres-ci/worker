@@ -10,10 +10,11 @@ import (
 
 type Build struct {
 	WorkingDir    string `db:"-"`
-	BuildID       int64  `db:"build_id"`
+	BuildID       int32  `db:"build_id"`
 	Branch        string `db:"branch"`
 	Revision      string `db:"revision"`
 	RepositoryURL string `db:"repository_url"`
+	RawConfig     string
 	Config        struct {
 		Images   []string `yaml:"images"`
 		Commands []string `yaml:"commands"`
@@ -47,6 +48,8 @@ func (b *Build) LoadConfig() error {
 
 		return err
 	}
+
+	b.RawConfig = string(data)
 
 	return nil
 }

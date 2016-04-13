@@ -35,7 +35,7 @@ func (b *build) Run(build *common.Build) error {
 
 	for _, image := range build.Config.Images {
 
-		if err := b.subbuild(image, build); err != nil {
+		if err := b.runPart(image, build); err != nil {
 
 			return err
 		}
@@ -44,7 +44,38 @@ func (b *build) Run(build *common.Build) error {
 	return nil
 }
 
-func (b *build) subbuild(image string, build *common.Build) error {
+const (
+	TestRunnerSql = `
+		SELECT 
+			namespace,
+			procedure,
+			to_json(errors) AS errors,
+			started_at,
+			finished_at
+		FROM assert.test_runner()
+	`
+	StartupSql = `
+		SELECT
+			setting           AS server_version, 
+			current_timestamp AS started_at
+		FROM pg_settings 
+		WHERE name = 'server_version'
+	`
+)
+
+func (b *build) runPart(image string, build *common.Build) error {
+
+	var startup struct {
+		StartedAt     time.Time `db:"started_at"`
+		ServerVersion string    `db:"server_version"`
+	}
+
+	if err := b.connect.Get(&startup, StartupSql); err != nil {
+
+		log.Errorf("Could not retrieve startup parameters: %v", err)
+
+		return err
+	}
 
 	container, err := b.docker.CreateConteiner(image, docker.CreateContainerOptions{
 		Env: []string{
@@ -97,23 +128,16 @@ func (b *build) subbuild(image string, build *common.Build) error {
 
 	if err != nil {
 
-		log.Errorf("Could not run PostgreSQL server: %v", err)
+		log.Errorf("Could not connect to PostgreSQL server: %v", err)
 
 		return err
 	}
 
-	var tests []test
+	var tests tests
 
-	if err := connect.Select(&tests, `
-		SELECT 
-			namespace,
-			procedure,
-			to_json(errors) AS errors,
-			started_at,
-			finished_at
-		FROM assert.test_runner()`); err != nil {
+	if err := connect.Select(&tests, TestRunnerSql); err != nil {
 
-		log.Errorf("Could not run tests: %v", err)
+		log.Errorf("Error when running a tests: %v", err)
 
 		return err
 	}
@@ -127,6 +151,29 @@ func (b *build) subbuild(image string, build *common.Build) error {
 
 			log.Debugf("--- PASS: %s.%s (%.4fs)", test.Namespace, test.Procedure, test.FinishedAt.Sub(test.StartedAt).Seconds())
 		}
+	}
+
+	_, err = b.connect.Exec(`SELECT builds.add_part(
+	 		$1,
+	 		$2,
+	 		$3,
+	 		$4,
+	 		$5,
+	 		$6
+	 	)`,
+		build.BuildID,
+		image,
+		startup.ServerVersion,
+		container.Output.String(),
+		startup.StartedAt,
+		tests,
+	)
+
+	if err != nil {
+
+		log.Errorf("Could not commit a part of the build: %v", err)
+
+		return err
 	}
 
 	return nil

@@ -1,5 +1,6 @@
 working_dir: "/tmp/postgres-ci/builds/"
 assets: "/opt/postgres-ci/worker/assets"
+num_workers: auto # number or auto (defines the number of parallel build process)
 
 debug:
   host: 10.211.55.6
@@ -19,6 +20,8 @@ connect:
 docker:
   endpoint: "unix:///var/run/docker.sock"
   tls_cert_path:
+  #binds:
+  #  - "/usr/bin/wget:/usr/bin/wget"
   auth:
     username:
     password:

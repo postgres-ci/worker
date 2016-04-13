@@ -63,7 +63,10 @@ func New(config common.Config) *app {
 		tasks: make(chan Task),
 	}
 
-	go app.runner()
+	for i := 0; i < config.GetNumWorkers(); i++ {
+
+		go app.worker()
+	}
 
 	return &app
 }
@@ -84,7 +87,7 @@ func (a *app) SetDebugMode() {
 func (a *app) Run() {
 
 	log.Info("Postgres-CI worker started")
-	log.Debugf("Pid: %d", os.Getpid())
+	log.Debugf("Pid: %d, num-workers: %d", os.Getpid(), a.config.GetNumWorkers())
 
 	if a.debug {
 
