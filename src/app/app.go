@@ -5,6 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/postgres-ci/worker/src/app/cmd"
+	"github.com/postgres-ci/worker/src/app/logwriter"
 	"github.com/postgres-ci/worker/src/common"
 	"github.com/postgres-ci/worker/src/docker"
 
@@ -111,6 +112,8 @@ func (a *app) handleOsSignals() {
 		syscall.SIGHUP,
 	)
 
+	logwriter := logwriter.New(a.config.Logger.Logfile)
+
 	for {
 
 		switch sig := <-signalChan; sig {
@@ -118,6 +121,8 @@ func (a *app) handleOsSignals() {
 		case syscall.SIGUSR1:
 
 			log.Info("Signal 'USR1'. Logrotate (postrotate)")
+
+			logwriter.Logrotate()
 
 		default:
 

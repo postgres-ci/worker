@@ -62,7 +62,7 @@ func (a *app) listen() {
 				continue
 			}
 
-			if _, err := a.connect.Exec("SELECT tasks.accept($1)", task.TaskID); err == nil {
+			if _, err := a.connect.Exec("SELECT task.accept($1)", task.TaskID); err == nil {
 
 				a.tasks <- task
 
@@ -79,7 +79,7 @@ func (a *app) listen() {
 
 				var task Task
 
-				if err := a.connect.Get(&task, "SELECT task_id, created_at FROM tasks.get()"); err != nil {
+				if err := a.connect.Get(&task, "SELECT task_id, created_at FROM task.get()"); err != nil {
 
 					if e, ok := err.(*pq.Error); !ok || e.Message != "NO_NEW_TASKS" {
 

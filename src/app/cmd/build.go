@@ -6,7 +6,6 @@ import (
 	"github.com/postgres-ci/worker/src/common"
 	"github.com/postgres-ci/worker/src/docker"
 
-	"database/sql"
 	"fmt"
 	"time"
 )
@@ -54,23 +53,16 @@ const (
 			finished_at
 		FROM assert.test_runner()
 	`
-	StartupSql = `
-		SELECT
-			setting           AS server_version, 
-			current_timestamp AS started_at
-		FROM pg_settings 
-		WHERE name = 'server_version'
-	`
 )
 
 func (b *build) runPart(image string, build *common.Build) error {
 
-	var startup struct {
-		StartedAt     time.Time `db:"started_at"`
-		ServerVersion string    `db:"server_version"`
-	}
+	var (
+		startedAt     time.Time
+		serverVersion string
+	)
 
-	if err := b.connect.Get(&startup, StartupSql); err != nil {
+	if err := b.connect.Get(&startedAt, "SELECT CURRENT_TIMESTAMP"); err != nil {
 
 		log.Errorf("Could not retrieve startup parameters: %v", err)
 
@@ -105,12 +97,16 @@ func (b *build) runPart(image string, build *common.Build) error {
 
 	defer container.Destroy()
 
-	if err := waitingForStartup(container.IPAddress); err != nil {
+	serverVersion, err = waitingForStartup(container.IPAddress)
+
+	if err != nil {
 
 		log.Errorf("Could not run PostgreSQL server: %v", err)
 
 		return err
 	}
+
+	log.Debugf("PostgreSQL %s database server started", serverVersion)
 
 	for _, command := range append([]string{"bash /opt/postgres-ci/assets/setup.sh"}, build.Config.Commands...) {
 
@@ -118,7 +114,7 @@ func (b *build) runPart(image string, build *common.Build) error {
 
 		if err := container.RunCmd(command); err != nil {
 
-			log.Errorf("Execute failed. Cmd: %s, output: %s", command, container.Output.String())
+			log.Errorf("Execute failed. Cmd: %s, output: %s", command, container.Output())
 
 			return err
 		}
@@ -147,25 +143,20 @@ func (b *build) runPart(image string, build *common.Build) error {
 		if len(test.Errors) != 0 {
 
 			log.Debugf("--- FAIL: %s.%s (%.4fs)\n\t%v", test.Namespace, test.Procedure, test.Errors, test.FinishedAt.Sub(test.StartedAt).Seconds())
+
 		} else {
 
 			log.Debugf("--- PASS: %s.%s (%.4fs)", test.Namespace, test.Procedure, test.FinishedAt.Sub(test.StartedAt).Seconds())
 		}
 	}
 
-	_, err = b.connect.Exec(`SELECT builds.add_part(
-	 		$1,
-	 		$2,
-	 		$3,
-	 		$4,
-	 		$5,
-	 		$6
-	 	)`,
+	_, err = b.connect.Exec(`SELECT build.add_part($1, $2, $3, $4, $5, $6, $7)`,
 		build.BuildID,
+		serverVersion,
 		image,
-		startup.ServerVersion,
-		container.Output.String(),
-		startup.StartedAt,
+		container.ID(),
+		container.Output(),
+		startedAt,
 		tests,
 	)
 
@@ -179,26 +170,28 @@ func (b *build) runPart(image string, build *common.Build) error {
 	return nil
 }
 
-func waitingForStartup(ipAddress string) error {
+func waitingForStartup(ipAddress string) (string, error) {
 
-	connect, err := sql.Open("postgres", fmt.Sprintf("postgres://postgres:postgres@%s/postgres?sslmode=disable", ipAddress))
+	connect, err := sqlx.Open("postgres", fmt.Sprintf("postgres://postgres:postgres@%s/postgres?sslmode=disable", ipAddress))
 
 	if err != nil {
 
-		return err
+		return "", err
 	}
 
 	defer connect.Close()
+
+	var serverVersion string
 
 	for i := 0; i < 30; i++ {
 
 		time.Sleep(time.Second)
 
-		if err := connect.Ping(); err == nil {
+		if err := connect.Get(&serverVersion, "SHOW server_version"); err == nil {
 
-			return nil
+			return serverVersion, nil
 		}
 	}
 
-	return fmt.Errorf("Could not connect to: %s", ipAddress)
+	return "", fmt.Errorf("Could not connect to: %s", ipAddress)
 }

@@ -18,7 +18,17 @@ type Container struct {
 	client      *client
 	containerID string
 	IPAddress   string
-	Output      bytes.Buffer
+	output      bytes.Buffer
+}
+
+func (c *Container) ID() string {
+
+	return c.containerID
+}
+
+func (c *Container) Output() string {
+
+	return c.output.String()
 }
 
 func (c *Container) RunCmd(cmd string) error {
@@ -36,8 +46,8 @@ func (c *Container) RunCmd(cmd string) error {
 	}
 
 	if err := c.client.StartExec(exec.ID, docker.StartExecOptions{
-		OutputStream: &c.Output,
-		ErrorStream:  &c.Output,
+		OutputStream: &c.output,
+		ErrorStream:  &c.output,
 	}); err != nil {
 
 		return err

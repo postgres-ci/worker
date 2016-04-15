@@ -4,6 +4,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -20,8 +21,8 @@ func Bind(c Config) (*client, error) {
 				Email:         c.Auth.Email,
 				ServerAddress: c.Auth.ServerAddress,
 			},
-			binds:     c.Binds,
-			pullCache: make(map[string]time.Time),
+			binds: c.Binds,
+			cache: make(map[string]time.Time),
 		}
 		err error
 	)
@@ -49,9 +50,10 @@ func Bind(c Config) (*client, error) {
 
 type client struct {
 	*docker.Client
-	binds     []string
-	auth      docker.AuthConfiguration
-	pullCache map[string]time.Time
+	auth  docker.AuthConfiguration
+	binds []string
+	mutex sync.Mutex
+	cache map[string]time.Time
 }
 
 func (c *client) CreateConteiner(image string, options CreateContainerOptions) (*Container, error) {
@@ -104,12 +106,18 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 
 func (c *client) pullImage(image string) error {
 
-	if cache, found := c.pullCache[image]; found && cache.Add(time.Minute*5).After(time.Now()) {
+	c.mutex.Lock()
+
+	if ts, ok := c.cache[image]; ok && ts.Add(time.Minute*5).After(time.Now()) {
+
+		c.mutex.Unlock()
 
 		return nil
 	}
 
-	c.pullCache[image] = time.Now()
+	c.cache[image] = time.Now()
+
+	c.mutex.Unlock()
 
 	return c.PullImage(
 		docker.PullImageOptions{

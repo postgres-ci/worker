@@ -13,7 +13,7 @@ const (
 			branch,
 			revision,
 			repository_url 
-		FROM builds.run_build($1)
+		FROM build.start($1)
 	`
 )
 
@@ -47,7 +47,7 @@ func (a *app) worker() {
 			}
 		}
 
-		if _, err := a.connect.Exec(`SELECT builds.stop_build($1, $2, $3)`, build.BuildID, build.RawConfig, buildError); err != nil {
+		if _, err := a.connect.Exec(`SELECT build.stop($1, $2, $3)`, build.BuildID, build.RawConfig, buildError); err != nil {
 
 			log.Errorf("Could not stop build: %v", err)
 		}
