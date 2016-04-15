@@ -7,11 +7,11 @@ import (
 )
 
 type test struct {
-	Namespace  string    `db:"namespace"`
-	Procedure  string    `db:"procedure"`
-	Errors     errors    `db:"errors"`
-	StartedAt  time.Time `db:"started_at"`
-	FinishedAt time.Time `db:"finished_at"`
+	Namespace  string    `json:"namespace"   db:"namespace"`
+	Procedure  string    `json:"procedure"   db:"procedure"`
+	Errors     errors    `json:"errors"      db:"errors"`
+	StartedAt  time.Time `json:"started_at"  db:"started_at"`
+	FinishedAt time.Time `json:"finished_at" db:"finished_at"`
 }
 
 type err struct {
