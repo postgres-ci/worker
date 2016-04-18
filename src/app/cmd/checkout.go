@@ -16,6 +16,8 @@ func (c *Checkout) Run(build *common.Build) error {
 
 	if err != nil {
 
+		log.Errorf("Could not checkout repo: %v", err)
+
 		return err
 	}
 

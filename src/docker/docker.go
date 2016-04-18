@@ -52,7 +52,7 @@ type client struct {
 	*docker.Client
 	auth  docker.AuthConfiguration
 	binds []string
-	mutex sync.Mutex
+	mutex sync.RWMutex
 	cache map[string]time.Time
 }
 
@@ -106,24 +106,35 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 
 func (c *client) pullImage(image string) error {
 
-	c.mutex.Lock()
+	c.mutex.RLock()
 
 	if ts, ok := c.cache[image]; ok && ts.Add(time.Minute*5).After(time.Now()) {
 
-		c.mutex.Unlock()
+		c.mutex.RUnlock()
 
 		return nil
 	}
+
+	c.mutex.RUnlock()
+
+	err := c.PullImage(
+		docker.PullImageOptions{
+			Repository: image,
+		}, c.auth,
+	)
+
+	if err != nil {
+
+		return err
+	}
+
+	c.mutex.Lock()
 
 	c.cache[image] = time.Now()
 
 	c.mutex.Unlock()
 
-	return c.PullImage(
-		docker.PullImageOptions{
-			Repository: image,
-		}, c.auth,
-	)
+	return nil
 }
 
 func (c *client) removeContainer(containerID string) error {

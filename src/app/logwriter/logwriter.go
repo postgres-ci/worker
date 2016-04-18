@@ -15,12 +15,7 @@ func New(path string) *logwriter {
 		writer: os.Stderr,
 	}
 
-	if !log.IsTerminal() {
-
-		log.SetFormatter(&log.JSONFormatter{})
-
-		logger.open()
-	}
+	logger.open()
 
 	return logger
 }
@@ -33,7 +28,7 @@ type logwriter struct {
 
 func (l *logwriter) open() {
 
-	if log.IsTerminal() {
+	if log.IsTerminal() || l.path == "" {
 
 		return
 	}
