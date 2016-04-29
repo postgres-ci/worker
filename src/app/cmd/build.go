@@ -120,6 +120,8 @@ func (b *build) runPart(image string, build *common.Build) error {
 		}
 	}
 
+	log.Debugf("Output: %s", container.Output())
+
 	connect, err := sqlx.Connect("postgres", build.DSN(container.IPAddress))
 
 	if err != nil {
@@ -142,7 +144,7 @@ func (b *build) runPart(image string, build *common.Build) error {
 
 		if len(test.Errors) != 0 {
 
-			log.Debugf("--- FAIL: %s.%s (%.4fs)\n\t%v", test.Namespace, test.Procedure, test.Errors, test.FinishedAt.Sub(test.StartedAt).Seconds())
+			log.Debugf("--- FAIL: %s.%s %v (%.4fs)\n\t", test.Namespace, test.Procedure, test.Errors, test.FinishedAt.Sub(test.StartedAt).Seconds())
 
 		} else {
 

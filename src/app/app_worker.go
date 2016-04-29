@@ -9,7 +9,6 @@ import (
 const (
 	StartBuildSql = `
 		SELECT 
-			build_id,
 			branch,
 			revision,
 			repository_url 
@@ -24,11 +23,13 @@ func (a *app) worker() {
 		task := <-a.tasks
 
 		var (
-			build      common.Build
+			build = common.Build{
+				BuildID: task.BuildID,
+			}
 			buildError string
 		)
 
-		if err := a.connect.Get(&build, StartBuildSql, task.TaskID); err != nil {
+		if err := a.connect.Get(&build, StartBuildSql, task.BuildID); err != nil {
 
 			log.Errorf("Could not start build: %v", err)
 

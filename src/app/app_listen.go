@@ -11,11 +11,11 @@ import (
 const (
 	minReconnectInterval = time.Second
 	maxReconnectInterval = time.Second * 5
-	channel              = "postgres-ci"
+	channel              = "postgres-ci::tasks"
 )
 
 type Task struct {
-	TaskID    int32     `json:"task_id"    db:"task_id"`
+	BuildID   int32     `json:"build_id"   db:"build_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
@@ -62,7 +62,7 @@ func (a *app) listen() {
 				continue
 			}
 
-			if _, err := a.connect.Exec("SELECT task.accept($1)", task.TaskID); err == nil {
+			if _, err := a.connect.Exec("SELECT build.accept($1)", task.BuildID); err == nil {
 
 				a.tasks <- task
 
@@ -79,7 +79,7 @@ func (a *app) listen() {
 
 				var task Task
 
-				if err := a.connect.Get(&task, "SELECT task_id, created_at FROM task.get()"); err != nil {
+				if err := a.connect.Get(&task, "SELECT build_id, created_at FROM build.fetch()"); err != nil {
 
 					if e, ok := err.(*pq.Error); !ok || e.Message != "NO_NEW_TASKS" {
 

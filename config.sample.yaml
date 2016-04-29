@@ -11,8 +11,8 @@ logger:
   logfile: "/var/log/postgres-ci/worker.log"
 
 connect:
-  #host: "/var/run/postgresql"
-  host: 172.16.9.131
+  host: "/var/run/postgresql"
+  #host: 172.16.9.131
   port: 5432
   username: "postgres_ci"
   password: "iAmAdiscoDancer"
