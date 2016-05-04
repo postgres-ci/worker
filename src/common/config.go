@@ -45,13 +45,25 @@ type Config struct {
 	Assets     string        `yaml:"assets"`
 	Connect    Connect       `yaml:"connect"`
 	Docker     docker.Config `yaml:"docker"`
-	Logger     Logger        `yaml:"logger"`
+	Loglevel   string        `yaml:"loglevel"`
 	NumWorkers string        `yaml:"num_workers"`
 	WorkingDir string        `yaml:"working_dir"`
 	Debug      struct {
 		Host string `host`
 		Port uint16 `port`
 	} `yaml:"debug"`
+}
+
+func (c *Config) LogLevel() log.Level {
+
+	switch c.Loglevel {
+	case "info":
+		return log.InfoLevel
+	case "warning":
+		return log.WarnLevel
+	}
+
+	return log.ErrorLevel
 }
 
 func (c *Config) DebugAddr() string {
@@ -98,21 +110,4 @@ func (c *Connect) DSN() string {
 	}
 
 	return dsn
-}
-
-type Logger struct {
-	Level   string `yaml:"level"`
-	Logfile string `yaml:"logfile"`
-}
-
-func (l *Logger) LogLevel() log.Level {
-
-	switch l.Level {
-	case "info":
-		return log.InfoLevel
-	case "warning":
-		return log.WarnLevel
-	}
-
-	return log.ErrorLevel
 }

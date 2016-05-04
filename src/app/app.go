@@ -5,20 +5,17 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/postgres-ci/worker/src/app/cmd"
-	"github.com/postgres-ci/worker/src/app/logwriter"
 	"github.com/postgres-ci/worker/src/common"
 	"github.com/postgres-ci/worker/src/docker"
 
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
 const (
 	MaxOpenConns    = 5
 	MaxIdleConns    = 2
-	ConnMaxLifetime = time.Minute
+	ConnMaxLifetime = time.Hour
 )
 
 type command interface {
@@ -95,40 +92,5 @@ func (a *app) Run() {
 		go a.debugInfo()
 	}
 
-	go a.listen()
-
-	a.handleOsSignals()
-}
-
-func (a *app) handleOsSignals() {
-
-	signalChan := make(chan os.Signal)
-
-	signal.Notify(signalChan,
-		os.Interrupt,
-		syscall.SIGUSR1,
-		syscall.SIGTERM,
-		syscall.SIGKILL,
-		syscall.SIGHUP,
-	)
-
-	logwriter := logwriter.New(a.config.Logger.Logfile)
-
-	for {
-
-		switch sig := <-signalChan; sig {
-
-		case syscall.SIGUSR1:
-
-			log.Info("Signal 'USR1'. Logrotate (postrotate)")
-
-			logwriter.Logrotate()
-
-		default:
-
-			log.Infof("Postgres-CI worker stopped (signal: %v)", sig)
-
-			os.Exit(0)
-		}
-	}
+	a.listen()
 }

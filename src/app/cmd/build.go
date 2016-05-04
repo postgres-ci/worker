@@ -131,6 +131,8 @@ func (b *build) runPart(image string, build *common.Build) error {
 		return err
 	}
 
+	defer connect.Close()
+
 	var tests tests
 
 	if err := connect.Select(&tests, TestRunnerSql); err != nil {

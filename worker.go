@@ -1,7 +1,7 @@
 package main
 
 import (
-	logger "github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/postgres-ci/worker/src/app"
 	"github.com/postgres-ci/worker/src/common"
 
@@ -37,22 +37,31 @@ func main() {
 
 	flag.Parse()
 
-	logger.SetFormatter(&logger.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05 MST",
-	})
+	if log.IsTerminal() {
+
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp:   true,
+			TimestampFormat: "2006-01-02 15:04:05 MST",
+		})
+
+	} else {
+
+		log.SetFormatter(&log.JSONFormatter{
+			TimestampFormat: "2006-01-02 15:04:05 MST",
+		})
+	}
 
 	config, err := common.ReadConfig(pathToConfig)
 
 	if err != nil {
 
-		logger.Fatalf("Error reading configuration file: %v", err)
+		log.Fatalf("Error reading configuration file: %v", err)
 	}
 
 	if debug {
-		logger.SetLevel(logger.DebugLevel)
+		log.SetLevel(log.DebugLevel)
 	} else {
-		logger.SetLevel(config.Logger.LogLevel())
+		log.SetLevel(config.LogLevel())
 	}
 
 	app := app.New(config)
