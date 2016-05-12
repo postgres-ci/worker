@@ -41,7 +41,7 @@ func (b *Build) LoadConfig() error {
 
 	if err != nil {
 
-		return nil
+		return fmt.Errorf("Could not read .postgres-ci.yaml file. %v", err)
 	}
 
 	if err := yaml.Unmarshal(data, &b.Config); err != nil {
