@@ -4,6 +4,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/lib/pq"
 
+	"database/sql"
 	"encoding/json"
 	"time"
 )
@@ -62,7 +63,9 @@ func (a *app) listen() {
 				continue
 			}
 
-			if _, err := a.connect.Exec("SELECT build.accept($1)", task.BuildID); err == nil {
+			var accept bool
+
+			if err := a.connect.Get(&accept, "SELECT accept FROM build.accept($1)", task.BuildID); err == nil && accept {
 
 				a.tasks <- task
 
@@ -81,7 +84,7 @@ func (a *app) listen() {
 
 				if err := a.connect.Get(&task, "SELECT build_id, created_at FROM build.fetch()"); err != nil {
 
-					if e, ok := err.(*pq.Error); !ok || e.Message != "NO_NEW_TASKS" {
+					if err != sql.ErrNoRows {
 
 						log.Errorf("Could not fetch new task: %v", err)
 					}

@@ -42,7 +42,7 @@ func New(config common.Config) *app {
 
 	connect.SetMaxOpenConns(MaxOpenConns)
 	connect.SetMaxIdleConns(MaxIdleConns)
-	connect.SetConnMaxLifetime(ConnMaxLifetime)
+	//	connect.SetConnMaxLifetime(ConnMaxLifetime)
 
 	app := app{
 		config:  config,
