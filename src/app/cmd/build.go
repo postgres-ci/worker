@@ -133,7 +133,7 @@ func (b *build) runPart(image string, build *common.Build) error {
 
 	defer connect.Close()
 
-	var tests tests
+	var tests plpgsqlTests
 
 	if err := connect.Select(&tests, TestRunnerSql); err != nil {
 

@@ -108,7 +108,7 @@ func (c *client) pullImage(image string) error {
 
 	c.mutex.RLock()
 
-	if ts, ok := c.cache[image]; ok && ts.Add(time.Minute*5).After(time.Now()) {
+	if ts, ok := c.cache[image]; ok && ts.Add(30*time.Minute).After(time.Now()) {
 
 		c.mutex.RUnlock()
 

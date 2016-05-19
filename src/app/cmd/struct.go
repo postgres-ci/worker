@@ -3,10 +3,11 @@ package cmd
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
-type test struct {
+type plpgsqlTest struct {
 	Namespace  string    `json:"namespace"   db:"namespace"`
 	Procedure  string    `json:"procedure"   db:"procedure"`
 	Errors     errors    `json:"errors"      db:"errors"`
@@ -19,11 +20,28 @@ type err struct {
 	Comment string `json:"comment"`
 }
 
-type tests []test
+type plpgsqlTests []plpgsqlTest
 
-func (t tests) Value() (driver.Value, error) {
+type test struct {
+	Function string  `json:"function"`
+	Errors   errors  `json:"errors"`
+	Duration float64 `json:"duration"`
+}
 
-	return json.Marshal(t)
+func (p plpgsqlTests) Value() (driver.Value, error) {
+
+	var tests []test
+
+	for _, plpgsql := range p {
+
+		tests = append(tests, test{
+			Function: fmt.Sprintf("%s.%s", plpgsql.Namespace, plpgsql.Procedure),
+			Errors:   plpgsql.Errors,
+			Duration: plpgsql.FinishedAt.Sub(plpgsql.StartedAt).Seconds(),
+		})
+	}
+
+	return json.Marshal(tests)
 }
 
 type errors []err
