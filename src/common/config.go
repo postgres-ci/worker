@@ -16,6 +16,13 @@ func ReadConfig(path string) (Config, error) {
 
 	var config Config
 
+	if path == "" {
+
+		config.setFromEnv()
+
+		return config, nil
+	}
+
 	if _, err := os.Open(path); err != nil {
 
 		if os.IsNotExist(err) {
@@ -48,10 +55,39 @@ type Config struct {
 	Loglevel   string        `yaml:"loglevel"`
 	NumWorkers string        `yaml:"num_workers"`
 	WorkingDir string        `yaml:"working_dir"`
-	Debug      struct {
-		Host string `host`
-		Port uint16 `port`
-	} `yaml:"debug"`
+}
+
+func (c *Config) setFromEnv() {
+
+	var port uint32 = 5432
+
+	if value, err := strconv.ParseUint(os.Getenv("DB_PORT"), 10, 32); err == nil {
+
+		port = uint32(value)
+	}
+
+	c.Assets = os.Getenv("ASSETS")
+	c.WorkingDir = os.Getenv("WORKING_DIR")
+	c.NumWorkers = os.Getenv("NUM_WORKERS")
+	c.Loglevel = os.Getenv("LOG_LEVEL")
+	c.Connect = Connect{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     port,
+		Username: os.Getenv("DB_USERNAME"),
+		Password: os.Getenv("DB_PASSWORD"),
+		Database: os.Getenv("DB_DATABASE"),
+	}
+
+	c.Docker = docker.Config{
+		Endpoint:    os.Getenv("DOCKER_ENDPOINT"),
+		TlsCertPath: os.Getenv("DOCKER_TLS_CERT_PATH"),
+		Auth: docker.AuthConfig{
+			Username:      os.Getenv("DOCKER_AUTH_USERNAME"),
+			Password:      os.Getenv("DOCKER_AUTH_PASSWORD"),
+			Email:         os.Getenv("DOCKER_AUTH_EMAIL"),
+			ServerAddress: os.Getenv("DOCKER_AUTH_SERVER_ADDRESS"),
+		},
+	}
 }
 
 func (c *Config) LogLevel() log.Level {
@@ -68,12 +104,13 @@ func (c *Config) LogLevel() log.Level {
 
 func (c *Config) DebugAddr() string {
 
-	return fmt.Sprintf("%s:%d", c.Debug.Host, c.Debug.Port)
+	return "127.0.0.1:8080"
 }
 
 func (c *Config) GetNumWorkers() int {
 
 	switch c.NumWorkers {
+	case "":
 	case "auto":
 
 		if cpus := runtime.NumCPU(); cpus > 2 {

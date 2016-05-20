@@ -3,10 +3,6 @@ assets     : "/opt/postgres-ci/worker/assets"
 loglevel   : "info" # info/warning/error
 num_workers: auto # number or auto (defines the number of parallel build process)
 
-debug:
-  host: 127.0.0.1
-  port: 8080
-
 connect:
   host: "/var/run/postgresql"
   #host: 172.16.9.131

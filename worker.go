@@ -19,14 +19,37 @@ const usage = `
 Postgres-CI worker
 
 Usage:
-    -c /path/to/config.yaml (default is /etc/postgres-ci/worker.yaml)
+    -c /path/to/config.yaml (if not set, then worker will use environment variables)
     -debug (enable debug mode)
+
+Environment variables:
+
+    ASSETS      - worker assets
+    WORKING_DIR - shared as volume between worker and running conteiners
+    NUM_WORKERS - number or auto (defines the number of parallel build process)
+    LOG_LEVEL   - one of: info/warning/error
+
+    == PostgreSQL server credentials
+
+    DB_HOST
+    DB_PORT
+    DB_USERNAME
+    DB_PASSWORD
+    DB_DATABASE 
+
+    == Docker daemon credentials
+
+    DOCKER_ENDPOINT  - for connect to docker API (unix:///var/run/docker.sock)
+    DOCKER_TLS_CERT_PATH
+    DOCKER_AUTH_PASSWORD
+    DOCKER_AUTH_EMAIL
+    DOCKER_AUTH_SERVER_ADDRESS
 `
 
 func main() {
 
 	flag.BoolVar(&debug, "debug", false, "")
-	flag.StringVar(&pathToConfig, "c", "/etc/postgres-ci/worker.yaml", "")
+	flag.StringVar(&pathToConfig, "c", "", "")
 
 	flag.Usage = func() {
 
