@@ -16,9 +16,12 @@ type Build struct {
 	RepositoryURL string `db:"repository_url"`
 	RawConfig     string
 	Config        struct {
-		Images   []string `yaml:"images"`
-		Commands []string `yaml:"commands"`
-		Postgres struct {
+		Env        []string `yaml:"env"`
+		Tests      []string `yaml:"tests"`
+		Images     []string `yaml:"images"`
+		Commands   []string `yaml:"commands"`
+		Entrypoint []string `yaml:"entrypoint"`
+		Postgres   struct {
 			Database string `yaml:"database"`
 			Username string `yaml:"username"`
 			Password string `yaml:"password"`

@@ -69,6 +69,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 			Image:      image,
 			WorkingDir: options.WorkingDir,
 			Env:        options.Env,
+			Entrypoint: options.Entrypoint,
 		},
 		HostConfig: &docker.HostConfig{
 			Privileged:    false,

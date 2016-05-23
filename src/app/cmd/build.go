@@ -7,6 +7,7 @@ import (
 	"github.com/postgres-ci/worker/src/docker"
 
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -30,11 +31,20 @@ type build struct {
 	connect *sqlx.DB
 }
 
+type runner func(image string, build *common.Build) error
+
 func (b *build) Run(build *common.Build) error {
+
+	fn := b.plpgsqlRunner
+
+	if len(build.Config.Tests) > 0 {
+
+		fn = b.customRunner
+	}
 
 	for _, image := range build.Config.Images {
 
-		if err := b.runPart(image, build); err != nil {
+		if err := fn(image, build); err != nil {
 
 			return err
 		}
@@ -55,7 +65,95 @@ const (
 	`
 )
 
-func (b *build) runPart(image string, build *common.Build) error {
+func (b *build) customRunner(image string, build *common.Build) error {
+
+	var (
+		startedAt time.Time
+	)
+
+	if err := b.connect.Get(&startedAt, "SELECT CURRENT_TIMESTAMP"); err != nil {
+
+		log.Errorf("Could not retrieve startup parameters: %v", err)
+
+		return err
+	}
+
+	log.Debugf("Custom runner. Image: %s", image)
+
+	container, err := b.docker.CreateConteiner(image, docker.CreateContainerOptions{
+		Env: build.Config.Env,
+		Binds: []string{
+			fmt.Sprintf("%s:%s", build.WorkingDir, WorkingDir),
+		},
+		Entrypoint: build.Config.Entrypoint,
+		WorkingDir: WorkingDir,
+	})
+
+	if err != nil {
+
+		log.Errorf("Could not create container: %v", err)
+
+		return err
+	}
+
+	log.Debugf("Create container: %s", image)
+
+	defer container.Destroy()
+
+	for _, command := range build.Config.Commands {
+
+		log.Debugf("Run cmd: %s", command)
+
+		if err := container.RunCmd(command); err != nil {
+
+			log.Errorf("Execute failed. Cmd: %s, output: %s", command, container.Output())
+
+			return err
+		}
+	}
+
+	var testsWitherrors []string
+
+	for _, test := range build.Config.Tests {
+
+		log.Debugf("Run test: %s", test)
+
+		if err := container.RunCmd(test); err != nil {
+
+			log.Warnf("Test failed: %s, output: %s", test, container.Output())
+
+			testsWitherrors = append(testsWitherrors, test)
+		}
+	}
+
+	log.Debugf("Output: %s", container.Output())
+
+	_, err = b.connect.Exec(`SELECT build.add_part($1, $2, $3, $4, $5, $6, $7)`,
+		build.BuildID,
+		"",
+		image,
+		container.ID(),
+		container.Output(),
+		startedAt,
+		"[]",
+	)
+
+	if err != nil {
+
+		log.Errorf("Could not commit a part of the build: %v", err)
+
+		return err
+	}
+
+	if len(testsWitherrors) > 0 {
+
+		return fmt.Errorf("Test(s) failed: %s", strings.Join(testsWitherrors, ", "))
+	}
+
+	return nil
+}
+
+func (b *build) plpgsqlRunner(image string, build *common.Build) error {
 
 	var (
 		startedAt     time.Time
@@ -70,7 +168,7 @@ func (b *build) runPart(image string, build *common.Build) error {
 	}
 
 	container, err := b.docker.CreateConteiner(image, docker.CreateContainerOptions{
-		Env: []string{
+		Env: append(build.Config.Env, []string{
 			"POSTGRES_USER=postgres",
 			"POSTGRES_PASSWORD=postgres",
 			"POSTGRES_DB=postgres",
@@ -78,11 +176,12 @@ func (b *build) runPart(image string, build *common.Build) error {
 			fmt.Sprintf("TEST_DATABASE=%s", build.Config.Postgres.Database),
 			fmt.Sprintf("TEST_USERNAME=%s", build.Config.Postgres.Username),
 			fmt.Sprintf("TEST_PASSWORD=%s", build.Config.Postgres.Password),
-		},
+		}...),
 		Binds: []string{
 			fmt.Sprintf("%s:%s", build.WorkingDir, WorkingDir),
 			fmt.Sprintf("%s:%s", b.assets, AssetsDir),
 		},
+		Entrypoint: build.Config.Entrypoint,
 		WorkingDir: WorkingDir,
 	})
 

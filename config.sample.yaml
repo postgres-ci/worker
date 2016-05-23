@@ -1,5 +1,5 @@
 working_dir: "/tmp/postgres-ci/builds/"
-assets     : "/opt/postgres-ci/worker/assets"
+assets     : "/opt/postgres-ci/assets"
 loglevel   : "info" # info/warning/error
 num_workers: auto # number or auto (defines the number of parallel build process)
 

@@ -12,6 +12,7 @@ type CreateContainerOptions struct {
 	Env        []string
 	Binds      []string
 	WorkingDir string
+	Entrypoint []string
 }
 
 type Container struct {
