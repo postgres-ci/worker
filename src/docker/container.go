@@ -62,7 +62,7 @@ func (c *Container) RunCmd(cmd string) error {
 
 	if inspect.ExitCode != 0 {
 
-		return fmt.Errorf("Execute cmd '%s' failed", cmd)
+		return fmt.Errorf("Execute cmd '%s' failed. Output: %s", cmd, c.Output())
 	}
 
 	return nil
@@ -70,5 +70,5 @@ func (c *Container) RunCmd(cmd string) error {
 
 func (c *Container) Destroy() error {
 
-	return c.client.removeContainer(c.containerID)
+	return c.client.RemoveContainer(c.containerID)
 }

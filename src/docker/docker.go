@@ -13,6 +13,7 @@ type Client interface {
 }
 
 func Bind(c Config) (*client, error) {
+
 	var (
 		client = client{
 			auth: docker.AuthConfiguration{
@@ -83,7 +84,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 
 	if err := c.StartContainer(createdContainer.ID, nil); err != nil {
 
-		c.removeContainer(createdContainer.ID)
+		c.RemoveContainer(createdContainer.ID)
 
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 
 	if err != nil {
 
-		c.removeContainer(createdContainer.ID)
+		c.RemoveContainer(createdContainer.ID)
 
 		return nil, err
 	}
@@ -137,11 +138,11 @@ func (c *client) pullImage(image string) error {
 	return nil
 }
 
-func (c *client) removeContainer(containerID string) error {
+func (c *client) RemoveContainer(containerID string) error {
 
 	c.StopContainer(containerID, 0)
 
-	return c.RemoveContainer(docker.RemoveContainerOptions{
+	return c.Client.RemoveContainer(docker.RemoveContainerOptions{
 		ID:            containerID,
 		RemoveVolumes: true,
 		Force:         true,
