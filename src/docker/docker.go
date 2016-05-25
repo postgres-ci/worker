@@ -4,6 +4,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 
 	"crypto/md5"
+	"crypto/rand"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -17,6 +18,9 @@ type Client interface {
 
 func Bind(c Config) (*client, error) {
 
+	rnd := make([]byte, 25)
+	rand.Read(rnd)
+
 	var (
 		client = client{
 			auth: docker.AuthConfiguration{
@@ -27,7 +31,7 @@ func Bind(c Config) (*client, error) {
 			},
 			binds: c.Binds,
 			cache: make(map[string]time.Time),
-			hash:  fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprint(time.Now().UnixNano())))),
+			hash:  fmt.Sprintf("%x", md5.Sum(rnd)),
 		}
 		err error
 	)
@@ -69,6 +73,10 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 
 		return nil, err
 	}
+
+	c.mutex.Lock()
+	c.sequence++
+	c.mutex.Unlock()
 
 	createdContainer, err := c.Client.CreateContainer(docker.CreateContainerOptions{
 		Name: fmt.Sprintf("pci-seq-%d-%s", c.sequence, c.hash),
@@ -118,7 +126,6 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 func (c *client) pullImage(image string) error {
 
 	c.mutex.RLock()
-	c.sequence++
 
 	if ts, ok := c.cache[image]; ok && ts.Add(30*time.Minute).After(time.Now()) {
 

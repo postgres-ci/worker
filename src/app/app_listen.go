@@ -68,9 +68,12 @@ func (a *app) listen() {
 
 			var accept bool
 
-			if err := a.connect.Get(&accept, "SELECT accept FROM build.accept($1)", task.BuildID); err == nil && accept {
+			if err := a.connect.Get(&accept, "SELECT accept FROM build.accept($1)", task.BuildID); err == nil {
 
-				a.tasks <- task
+				if accept {
+
+					a.tasks <- task
+				}
 
 			} else {
 
@@ -96,6 +99,11 @@ func (a *app) listen() {
 				}
 
 				a.tasks <- task
+			}
+
+			if _, err := a.connect.Exec("SELECT build.gc()"); err != nil {
+
+				log.Errorf("Error when checking the lost builds: %v", err)
 			}
 
 		case <-checkContainers:
