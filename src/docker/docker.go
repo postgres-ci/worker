@@ -18,9 +18,6 @@ type Client interface {
 
 func Bind(c Config) (*client, error) {
 
-	rnd := make([]byte, 25)
-	rand.Read(rnd)
-
 	var (
 		client = client{
 			auth: docker.AuthConfiguration{
@@ -31,7 +28,6 @@ func Bind(c Config) (*client, error) {
 			},
 			binds: c.Binds,
 			cache: make(map[string]time.Time),
-			hash:  fmt.Sprintf("%x", md5.Sum(rnd)),
 		}
 		err error
 	)
@@ -59,12 +55,10 @@ func Bind(c Config) (*client, error) {
 
 type client struct {
 	*docker.Client
-	auth     docker.AuthConfiguration
-	binds    []string
-	mutex    sync.RWMutex
-	cache    map[string]time.Time
-	hash     string
-	sequence int
+	auth  docker.AuthConfiguration
+	binds []string
+	mutex sync.RWMutex
+	cache map[string]time.Time
 }
 
 func (c *client) CreateConteiner(image string, options CreateContainerOptions) (*Container, error) {
@@ -74,12 +68,11 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 		return nil, err
 	}
 
-	c.mutex.Lock()
-	c.sequence++
-	c.mutex.Unlock()
+	name := make([]byte, 32)
+	rand.Read(name)
 
 	createdContainer, err := c.Client.CreateContainer(docker.CreateContainerOptions{
-		Name: fmt.Sprintf("pci-seq-%d-%s", c.sequence, c.hash),
+		Name: fmt.Sprintf("pci-seq-%x", md5.Sum(name)),
 		Config: &docker.Config{
 			Image:      image,
 			WorkingDir: options.WorkingDir,

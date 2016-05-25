@@ -79,9 +79,19 @@ func PLpgSQL(image, assets string, dockerClient docker.Client, connect *sqlx.DB,
 
 	defer connectToContainer.Close()
 
-	var tests plpgsqlTests
-
-	if err := connectToContainer.Select(&tests, TestRunnerSql); err != nil {
+	var (
+		tests plpgsqlTests
+		sql   = `
+		SELECT 
+			namespace,
+			procedure,
+			to_json(errors) AS errors,
+			started_at,
+			finished_at
+		FROM assert.test_runner()
+		`
+	)
+	if err := connectToContainer.Select(&tests, sql); err != nil {
 
 		return fmt.Errorf("Error when running a tests: %v", err)
 	}
