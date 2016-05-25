@@ -6,12 +6,14 @@ import (
 
 	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 )
 
 const (
 	minReconnectInterval = time.Second
-	maxReconnectInterval = time.Second * 5
+	maxReconnectInterval = 5 * time.Second
+	containerZombieTTL   = 2 * time.Hour
 	channel              = "postgres-ci::tasks"
 )
 
@@ -37,8 +39,9 @@ func (a *app) listen() {
 	listener.Listen(channel)
 
 	var (
-		check  = time.Tick(time.Minute)
-		events = listener.NotificationChannel()
+		events          = listener.NotificationChannel()
+		checkTasks      = time.Tick(time.Minute)
+		checkContainers = time.Tick(time.Minute * 10)
 	)
 
 	for {
@@ -74,7 +77,7 @@ func (a *app) listen() {
 				log.Debugf("Error when accepting a task: %v", err)
 			}
 
-		case <-check:
+		case <-checkTasks:
 
 			log.Debug("Checking for new tasks")
 
@@ -93,6 +96,21 @@ func (a *app) listen() {
 				}
 
 				a.tasks <- task
+			}
+
+		case <-checkContainers:
+
+			if containers, err := a.docker.ListContainers(); err == nil {
+
+				for _, container := range containers {
+
+					if strings.HasPrefix(container.Name, "/pci-seq-") && container.CreatedAt.Add(containerZombieTTL).Before(time.Now()) {
+
+						log.Warnf("Container was running too long time, destroy: %s", container.Name)
+
+						container.Destroy()
+					}
+				}
 			}
 		}
 	}

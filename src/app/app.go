@@ -46,6 +46,7 @@ func New(config common.Config) *app {
 
 	app := app{
 		config:  config,
+		docker:  dockerClient,
 		connect: connect,
 		commands: []command{
 			&cmd.Checkout{
@@ -71,6 +72,7 @@ func New(config common.Config) *app {
 
 type app struct {
 	config   common.Config
+	docker   docker.Client
 	connect  *sqlx.DB
 	commands []command
 	tasks    chan Task

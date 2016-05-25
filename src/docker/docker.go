@@ -3,6 +3,8 @@ package docker
 import (
 	"github.com/fsouza/go-dockerclient"
 
+	"crypto/md5"
+	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
@@ -10,6 +12,7 @@ import (
 
 type Client interface {
 	CreateConteiner(image string, options CreateContainerOptions) (*Container, error)
+	ListContainers() ([]Container, error)
 }
 
 func Bind(c Config) (*client, error) {
@@ -24,6 +27,7 @@ func Bind(c Config) (*client, error) {
 			},
 			binds: c.Binds,
 			cache: make(map[string]time.Time),
+			hash:  fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprint(time.Now().UnixNano())))),
 		}
 		err error
 	)
@@ -51,10 +55,12 @@ func Bind(c Config) (*client, error) {
 
 type client struct {
 	*docker.Client
-	auth  docker.AuthConfiguration
-	binds []string
-	mutex sync.RWMutex
-	cache map[string]time.Time
+	auth     docker.AuthConfiguration
+	binds    []string
+	mutex    sync.RWMutex
+	cache    map[string]time.Time
+	hash     string
+	sequence int
 }
 
 func (c *client) CreateConteiner(image string, options CreateContainerOptions) (*Container, error) {
@@ -65,6 +71,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 	}
 
 	createdContainer, err := c.Client.CreateContainer(docker.CreateContainerOptions{
+		Name: fmt.Sprintf("pci-seq-%d-%s", c.sequence, c.hash),
 		Config: &docker.Config{
 			Image:      image,
 			WorkingDir: options.WorkingDir,
@@ -100,8 +107,10 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 	}
 
 	return &Container{
-		client:      c,
+		Name:        container.Name,
 		IPAddress:   container.NetworkSettings.IPAddress,
+		CreatedAt:   container.Created,
+		client:      c,
 		containerID: createdContainer.ID,
 	}, nil
 }
@@ -109,6 +118,7 @@ func (c *client) CreateConteiner(image string, options CreateContainerOptions) (
 func (c *client) pullImage(image string) error {
 
 	c.mutex.RLock()
+	c.sequence++
 
 	if ts, ok := c.cache[image]; ok && ts.Add(30*time.Minute).After(time.Now()) {
 
@@ -148,4 +158,32 @@ func (c *client) RemoveContainer(containerID string) error {
 		RemoveVolumes: true,
 		Force:         true,
 	})
+}
+
+func (c *client) ListContainers() ([]Container, error) {
+
+	apiContainers, err := c.Client.ListContainers(docker.ListContainersOptions{All: true})
+
+	if err != nil {
+
+		return nil, err
+	}
+
+	containers := make([]Container, 0, len(apiContainers))
+
+	for _, apiContainer := range apiContainers {
+
+		if container, err := c.InspectContainer(apiContainer.ID); err == nil {
+
+			containers = append(containers, Container{
+				Name:        container.Name,
+				IPAddress:   container.NetworkSettings.IPAddress,
+				CreatedAt:   container.Created,
+				client:      c,
+				containerID: apiContainer.ID,
+			})
+		}
+	}
+
+	return containers, nil
 }

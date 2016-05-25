@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type CreateContainerOptions struct {
@@ -16,9 +17,11 @@ type CreateContainerOptions struct {
 }
 
 type Container struct {
+	Name        string
+	IPAddress   string
+	CreatedAt   time.Time
 	client      *client
 	containerID string
-	IPAddress   string
 	output      bytes.Buffer
 }
 
