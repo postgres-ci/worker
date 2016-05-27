@@ -14,7 +14,8 @@ const (
 	minReconnectInterval = time.Second
 	maxReconnectInterval = 5 * time.Second
 	containerZombieTTL   = 2 * time.Hour
-	channel              = "postgres-ci::tasks"
+	channelTasks         = "postgres-ci::tasks"
+	channelStopContainer = "postgres-ci::stop_container"
 )
 
 type Task struct {
@@ -36,7 +37,8 @@ func (a *app) listen() {
 		log.Debugf("Postgres notify send event: %v", event)
 	})
 
-	listener.Listen(channel)
+	listener.Listen(channelTasks)
+	listener.Listen(channelStopContainer)
 
 	var (
 		events          = listener.NotificationChannel()
@@ -57,27 +59,49 @@ func (a *app) listen() {
 
 			log.Debugf("Received from [%s] playload: %s", event.Channel, event.Extra)
 
-			var task Task
+			switch event.Channel {
+			case channelTasks:
 
-			if err := json.Unmarshal([]byte(event.Extra), &task); err != nil {
+				var task Task
 
-				log.Errorf("Could not unmarshal notify playload: %v", err)
+				if err := json.Unmarshal([]byte(event.Extra), &task); err != nil {
 
-				continue
-			}
+					log.Errorf("Could not unmarshal notify playload: %v", err)
 
-			var accept bool
-
-			if err := a.connect.Get(&accept, "SELECT accept FROM build.accept($1)", task.BuildID); err == nil {
-
-				if accept {
-
-					a.tasks <- task
+					continue
 				}
 
-			} else {
+				var accept bool
 
-				log.Debugf("Error when accepting a task: %v", err)
+				if err := a.connect.Get(&accept, "SELECT accept FROM build.accept($1)", task.BuildID); err == nil {
+
+					if accept {
+
+						a.tasks <- task
+					}
+
+				} else {
+
+					log.Debugf("Error when accepting a task: %v", err)
+				}
+
+			case channelStopContainer:
+
+				var container struct {
+					ContainerID string    `json:"container_id"`
+					CreatedAt   time.Time `json:"created_at"`
+				}
+
+				if err := json.Unmarshal([]byte(event.Extra), &container); err != nil {
+
+					log.Errorf("Could not unmarshal notify playload: %v", err)
+
+					continue
+				}
+
+				log.Warnf("Remove container because build stopped by timeout: %s", container.ContainerID)
+
+				a.docker.RemoveContainer(container.ContainerID)
 			}
 
 		case <-checkTasks:

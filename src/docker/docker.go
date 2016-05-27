@@ -13,6 +13,7 @@ import (
 
 type Client interface {
 	CreateConteiner(image string, options CreateContainerOptions) (*Container, error)
+	RemoveContainer(containerID string) error
 	ListContainers() ([]Container, error)
 }
 
