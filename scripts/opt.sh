@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+if [ "$TEST_USERNAME" != "$POSTGRES_USER" ]; then
+
+	env PGPASSWORD=$POSTGRES_PASSWORD psql -q -v ON_ERROR_STOP=1 -U $POSTGRES_USER -d $POSTGRES_DB <<-SQL
+		CREATE USER "$TEST_USERNAME" WITH PASSWORD '$TEST_PASSWORD' LOGIN;
+	SQL
+
+    echo "Create test user: $TEST_USERNAME"
+fi
+
+if [ "$TEST_DATABASE" != "$POSTGRES_DB" ]; then
+
+	env PGPASSWORD=$POSTGRES_PASSWORD psql -v ON_ERROR_STOP=1 -q -U $POSTGRES_USER -d $POSTGRES_DB <<-SQL
+	   CREATE DATABASE "$TEST_DATABASE" WITH OWNER "$TEST_USERNAME";
+	SQL
+
+    echo "Create test database: $TEST_DATABASE"
+fi
+
+env PGPASSWORD=$TEST_PASSWORD psql -q -v ON_ERROR_STOP=1 -U $TEST_USERNAME -d $TEST_DATABASE -f /opt/postgres-ci/assets/assert/framework.sql
